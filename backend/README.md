@@ -276,11 +276,12 @@ npx react-native run-android
 
 ## Audio transcription API
 
-Open `http://localhost:3000` for the browser upload page, or call the API
-directly. The endpoint sends uploaded audio to Google's Gemini API; it does not
-run a transcription model locally. Create a Gemini API key in
+Open `http://localhost:3000` (or the port set by `PORT` in `.env`) for the
+browser upload page, or call the API directly. The endpoint sends uploaded
+audio to Google's Gemini API; it does not run a transcription model locally.
+Create a Gemini API key in
 [Google AI Studio](https://aistudio.google.com/apikey), put it in `GEMINI_API_KEY`
-in `.env`, then run `npm run dev` from the repository root.
+in `backend/.env`, then run `npm run dev` from the `backend` folder.
 
 Transcription requests are limited to 10 per IP address per 15 minutes. Provider
 requests retry up to two times for temporary failures with increasing delays,
@@ -293,6 +294,24 @@ The Gemini API has a limited free tier, but free availability depends on the
 selected model, region, account, and current quota. Check [Gemini API pricing](https://ai.google.dev/gemini-api/docs/pricing)
 before relying on it; free-tier prompts may be used to improve Google's products.
 Uploaded files are sent to Google for transcription.
+
+## Mobile help API
+
+After transcription, send the returned text to `POST /api/help` as multipart form
+data using the `transcription` field. Optionally add up to four screenshots or
+other context images using repeated `images` fields (PNG, JPEG, GIF, or WebP;
+up to 8 MB each). Images are held in memory for the request and are not saved to
+the backend's uploads folder. Gemini receives the transcript and, when provided,
+the images to produce up to five simple steps in the speaker's language. The
+response is `{ "steps": ["...", "..."] }`. Urdu speech gets Urdu-script
+transcripts and Urdu-script answers. Hindi/Devanagari transcripts also get
+Urdu-script answers, as requested. English speech gets English answers. The
+browser displays one step at a time.
+
+For JSON-only requests, send `{ "transcription": "..." }` with
+`Content-Type: application/json`. Set `GEMINI_HELP_MODEL` in `.env` to select
+the Gemini model; it defaults to `gemini-3.5-flash`. Help requests are limited
+to 10 per IP address per 15 minutes.
 
 ## 13. Hackathon Build Plan (9:00 AM – 5:00 PM PKT, team of 4)
 

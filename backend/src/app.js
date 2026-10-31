@@ -11,6 +11,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import morgan from "morgan";
 import multer from "multer";
+import { generateMobileHelp } from "./mobileHelp.js";
 import { retryProviderRequest, transcribeWithFallback } from "./transcription.js";
 
 const app = express();
@@ -40,6 +41,12 @@ const acceptedAudioTypes = new Set([
   "audio/x-m4a",
   "audio/x-wav",
 ]);
+const acceptedImageTypes = new Set([
+  "image/gif",
+  "image/jpeg",
+  "image/png",
+  "image/webp",
+]);
 
 const upload = multer({
   storage: multer.diskStorage({
@@ -62,6 +69,24 @@ const upload = multer({
   },
 });
 
+const helpImageUpload = multer({
+  storage: multer.memoryStorage(),
+  limits: {
+    fileSize: 8 * 1024 * 1024,
+    files: 4,
+    fields: 1,
+    fieldSize: 12 * 1024,
+  },
+  fileFilter: (_req, file, callback) => {
+    if (!acceptedImageTypes.has(file.mimetype)) {
+      callback(new Error("Unsupported image type. Upload a PNG, JPEG, GIF, or WebP image."));
+      return;
+    }
+
+    callback(null, true);
+  },
+});
+
 const transcriptionRateLimit = rateLimit({
   windowMs: 15 * 60 * 1000,
   limit: 10,
@@ -74,12 +99,25 @@ const transcriptionRateLimit = rateLimit({
   },
 });
 
+const mobileHelpRateLimit = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  limit: 10,
+  standardHeaders: "draft-8",
+  legacyHeaders: false,
+  handler: (_req, res) => {
+    res.status(429).json({
+      error: "Too many help requests. Try again in 15 minutes.",
+    });
+  },
+});
+
 app.use(helmet());
 app.use(cors());
 app.use(express.json({ limit: "1mb" }));
 app.use(morgan("dev"));
 app.use(express.static(publicDirectory));
 app.use("/api/transcriptions", transcriptionRateLimit);
+app.use("/api/help", mobileHelpRateLimit);
 
 app.get("/health", (_req, res) => {
   res.json({ status: "ok" });
@@ -143,6 +181,55 @@ app.post("/api/transcriptions", upload.single("audio"), async (req, res) => {
   }
 });
 
+app.post("/api/help", helpImageUpload.array("images", 4), async (req, res) => {
+  const transcription = req.body?.transcription;
+
+  if (
+    typeof transcription !== "string" ||
+    !transcription.trim() ||
+    transcription.length > 6000
+  ) {
+    res.status(400).json({
+      error: "Provide a transcription between 1 and 6000 characters.",
+    });
+    return;
+  }
+
+  if (!process.env.GEMINI_API_KEY) {
+    res
+      .status(503)
+      .json({ error: "Mobile help is not configured. Set GEMINI_API_KEY." });
+    return;
+  }
+
+  try {
+    const client = new GoogleGenAI({
+      apiKey: process.env.GEMINI_API_KEY,
+      httpOptions: { timeout: 60_000 },
+    });
+    const help = await retryProviderRequest(
+      () =>
+        generateMobileHelp(
+          client,
+          transcription.trim(),
+          req.files ?? [],
+          process.env.GEMINI_HELP_MODEL || "gemini-3.5-flash",
+        ),
+      "Mobile help generation",
+    );
+
+    res.json(help);
+  } catch (error) {
+    console.error("Mobile help generation failed:", error);
+    res
+      .status(502)
+      .json({
+        error:
+          "Gemini could not generate help steps right now. Please try again.",
+      });
+  }
+});
+
 app.use((error, _req, res, _next) => {
   if (error instanceof multer.MulterError) {
     const status = error.code === "LIMIT_FILE_SIZE" ? 413 : 400;
@@ -151,6 +238,14 @@ app.use((error, _req, res, _next) => {
   }
 
   if (error.message === "Unsupported audio type. Upload an audio file.") {
+    res.status(415).json({ error: error.message });
+    return;
+  }
+
+  if (
+    error.message ===
+    "Unsupported image type. Upload a PNG, JPEG, GIF, or WebP image."
+  ) {
     res.status(415).json({ error: error.message });
     return;
   }

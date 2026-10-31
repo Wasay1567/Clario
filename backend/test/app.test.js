@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { after, before, test } from "node:test";
 import app from "../src/app.js";
+import { generateMobileHelp } from "../src/mobileHelp.js";
 import { transcribeWithFallback } from "../src/transcription.js";
 
 let server;
@@ -26,13 +27,14 @@ test("GET /health reports that the API is ready", async () => {
   assert.deepEqual(await response.json(), { status: "ok" });
 });
 
-test("GET / serves the audio transcription page", async () => {
+test("GET / serves the mobile-help page with multi-image upload", async () => {
   const response = await fetch(`${baseUrl}/`);
 
   assert.equal(response.status, 200);
   assert.match(response.headers.get("content-type"), /text\/html/);
   const page = await response.text();
-  assert.match(page, /Audio transcription/);
+  assert.match(page, /Mobile help/);
+  assert.match(page, /id="images"[\s\S]*?multiple/);
   assert.match(page, /<script src="\/app\.js" defer><\/script>/);
   assert.doesNotMatch(page, /<script>[\s\S]*?<\/script>/);
 });
@@ -42,7 +44,9 @@ test("GET /app.js serves the browser transcription handler", async () => {
 
   assert.equal(response.status, 200);
   assert.match(response.headers.get("content-type"), /javascript/);
-  assert.match(await response.text(), /fetch\("\/api\/transcriptions"/);
+  const script = await response.text();
+  assert.match(script, /fetch\("\/api\/transcriptions"/);
+  assert.match(script, /fetch\("\/api\/help"/);
 });
 
 test("POST /api/transcriptions requires an audio file", async () => {
@@ -92,6 +96,207 @@ test("POST /api/transcriptions rejects unsupported file types", async () => {
   assert.match((await response.json()).error, /unsupported audio type/i);
 });
 
+test("POST /api/help requires a transcription", async () => {
+  const response = await fetch(`${baseUrl}/api/help`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({}),
+  });
+
+  assert.equal(response.status, 400);
+  assert.match((await response.json()).error, /provide a transcription/i);
+});
+
+test("POST /api/help reports when Gemini is not configured", async () => {
+  const originalApiKey = process.env.GEMINI_API_KEY;
+  delete process.env.GEMINI_API_KEY;
+
+  try {
+    const form = new FormData();
+    form.append("transcription", "I cannot save a contact.");
+    form.append("images", new Blob(["first"], { type: "image/png" }), "screen-1.png");
+    form.append("images", new Blob(["second"], { type: "image/jpeg" }), "screen-2.jpg");
+
+    const response = await fetch(`${baseUrl}/api/help`, {
+      method: "POST",
+      body: form,
+    });
+
+    assert.equal(response.status, 503);
+    assert.match((await response.json()).error, /GEMINI_API_KEY/);
+  } finally {
+    if (originalApiKey === undefined) {
+      delete process.env.GEMINI_API_KEY;
+    } else {
+      process.env.GEMINI_API_KEY = originalApiKey;
+    }
+  }
+});
+
+test("POST /api/help rejects unsupported image types", async () => {
+  const form = new FormData();
+  form.append("transcription", "I cannot save a contact.");
+  form.append("images", new Blob(["not an image"], { type: "text/plain" }), "notes.txt");
+
+  const response = await fetch(`${baseUrl}/api/help`, {
+    method: "POST",
+    body: form,
+  });
+
+  assert.equal(response.status, 415);
+  assert.match((await response.json()).error, /unsupported image type/i);
+});
+
+test("mobile help sends the transcription and multiple images to Gemini", async () => {
+  let request;
+  const client = {
+    models: {
+      generateContent: async (params) => {
+        request = params;
+        return {
+          text: JSON.stringify({
+            steps: ["Open Contacts.", "Enter the name and number."],
+          }),
+        };
+      },
+    },
+  };
+  const images = [
+    { mimetype: "image/png", buffer: Buffer.from("first-image") },
+    { mimetype: "image/jpeg", buffer: Buffer.from("second-image") },
+  ];
+
+  const help = await generateMobileHelp(
+    client,
+    "I cannot save a contact.",
+    images,
+    "test-model",
+  );
+
+  assert.deepEqual(help, {
+    steps: ["Open Contacts.", "Enter the name and number."],
+  });
+  assert.equal(request.model, "test-model");
+  assert.match(request.config.systemInstruction, /RESPONSE LANGUAGE: English/i);
+  assert.match(request.contents[0].parts[0].text, /I cannot save a contact\./);
+  assert.equal(request.config.responseMimeType, "application/json");
+  assert.equal(request.config.maxOutputTokens, 1400);
+  assert.deepEqual(
+    request.contents[0].parts.slice(1).map((part) => part.inlineData),
+    images.map((image) => ({
+      mimeType: image.mimetype,
+      data: image.buffer.toString("base64"),
+    })),
+  );
+});
+
+test("mobile help requests Urdu-script steps for Urdu transcriptions", async () => {
+  let request;
+  const client = {
+    models: {
+      generateContent: async (params) => {
+        request = params;
+        return { text: JSON.stringify({ steps: ["رابطے کھولیں۔"] }) };
+      },
+    },
+  };
+
+  const help = await generateMobileHelp(
+    client,
+    "مجھے نیا رابطہ محفوظ کرنے کا طریقہ بتائیں۔",
+    [],
+    "test-model",
+  );
+
+  assert.deepEqual(help, { steps: ["رابطے کھولیں۔"] });
+  assert.match(
+    request.config.systemInstruction,
+    /RESPONSE LANGUAGE: Urdu, written in Urdu script/i,
+  );
+});
+
+test("mobile help requests Urdu-script steps for Hindi Devanagari transcriptions", async () => {
+  let request;
+  const client = {
+    models: {
+      generateContent: async (params) => {
+        request = params;
+        return { text: JSON.stringify({ steps: ["رابطے کھولیں۔"] }) };
+      },
+    },
+  };
+
+  const help = await generateMobileHelp(
+    client,
+    "मुझे नया संपर्क सहेजने का तरीका बताएं।",
+    [],
+    "test-model",
+  );
+
+  assert.deepEqual(help, { steps: ["رابطے کھولیں۔"] });
+  assert.match(
+    request.config.systemInstruction,
+    /Hindi text written in Devanagari.*user wants Urdu answers/i,
+  );
+});
+
+test("mobile help requests Urdu-script steps for Roman Urdu transcriptions", async () => {
+  let request;
+  const client = {
+    models: {
+      generateContent: async (params) => {
+        request = params;
+        return { text: JSON.stringify({ steps: ["رابطے کھولیں۔"] }) };
+      },
+    },
+  };
+
+  await generateMobileHelp(
+    client,
+    "Mujhe naya contact save karna hai.",
+    [],
+    "test-model",
+  );
+
+  assert.match(
+    request.config.systemInstruction,
+    /RESPONSE LANGUAGE: Urdu, written in Urdu script/i,
+  );
+});
+
+test("mobile help rejects invalid Gemini step responses", async () => {
+  const client = {
+    models: {
+      generateContent: async () => ({ text: JSON.stringify({ steps: [] }) }),
+    },
+  };
+
+  await assert.rejects(
+    generateMobileHelp(client, "I need help.", [], "test-model"),
+    /invalid mobile-help steps list/i,
+  );
+});
+
+test("mobile help rejects steps Gemini returns in the wrong language", async () => {
+  const client = {
+    models: {
+      generateContent: async () => ({
+        text: JSON.stringify({ steps: ["Could you repeat your question?"] }),
+      }),
+    },
+  };
+
+  await assert.rejects(
+    generateMobileHelp(
+      client,
+      "مجھے نیا رابطہ محفوظ کرنے کا طریقہ بتائیں۔",
+      [],
+      "test-model",
+    ),
+    /steps in the wrong language/i,
+  );
+});
+
 test("transcription retries temporary provider errors", async () => {
   let attempts = 0;
   const client = {
@@ -117,6 +322,29 @@ test("transcription retries temporary provider errors", async () => {
 
   assert.equal(text, "Recovered transcript");
   assert.equal(attempts, 2);
+});
+
+test("transcription asks Gemini to preserve the spoken language and Urdu script", async () => {
+  const requests = [];
+  const client = {
+    interactions: {
+      create: async (request) => {
+        requests.push(request);
+        return { output_text: "مجھے مدد چاہیے۔" };
+      },
+    },
+  };
+
+  await transcribeWithFallback(
+    client,
+    { uri: "files/audio", mimeType: "audio/mpeg" },
+    "primary-model",
+    "fallback-model",
+  );
+
+  assert.deepEqual(requests[0].input.map((part) => part.type), ["text", "audio"]);
+  assert.match(requests[0].input[0].text, /do not translate it/i);
+  assert.match(requests[0].input[0].text, /Urdu script, not Hindi or Devanagari/i);
 });
 
 test("transcription falls back to another model after a model error", async () => {

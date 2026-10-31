@@ -1,6 +1,8 @@
 const retryableStatuses = new Set([408, 429, 500, 502, 503, 504]);
 const maxAttempts = 3;
 const initialRetryDelayMs = 500;
+const transcriptionInstructions =
+  "Transcribe the speech verbatim in the language that is actually spoken; do not translate it. If the speaker is speaking Urdu, write the transcript in Urdu script, not Hindi or Devanagari. If the speaker is speaking Hindi, write it in Devanagari. Return only the transcript.";
 
 export async function retryProviderRequest(operation, description) {
   for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
@@ -37,26 +39,17 @@ export async function transcribeWithFallback(
         () =>
           client.interactions.create({
             model,
-            input:
-              index === 0
-                ? [
-                    {
-                      type: "audio",
-                      uri: audioFile.uri,
-                      mime_type: audioFile.mimeType,
-                    },
-                  ]
-                : [
-                    {
-                      type: "text",
-                      text: "Transcribe the spoken words in this audio accurately. Return only the transcript.",
-                    },
-                    {
-                      type: "audio",
-                      uri: audioFile.uri,
-                      mime_type: audioFile.mimeType,
-                    },
-                  ],
+            input: [
+              {
+                type: "text",
+                text: transcriptionInstructions,
+              },
+              {
+                type: "audio",
+                uri: audioFile.uri,
+                mime_type: audioFile.mimeType,
+              },
+            ],
           }),
         `Transcription with ${model}`,
       );
