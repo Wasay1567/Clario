@@ -1,0 +1,6 @@
+{
+  "name": "Clario (مددگار) - Android Screen Assistant",
+  "description": "Material 3 Android digital screen helper and fraud protection app for elders with floating overlay, voice guidance, and offline support.",
+  "requestFramePermissions": ["camera", "microphone"],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
