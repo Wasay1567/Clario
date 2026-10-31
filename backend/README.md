@@ -213,7 +213,8 @@ Access to SMS is sensitive, so we apply these rules:
 | Method | Endpoint | Purpose |
 |---|---|---|
 | POST | `/api/auth/register`, `/api/auth/login` | Create account / sign in |
-| POST | `/api/help` | Voice + screenshot (+ session context) → steps |
+| POST | `/api/assist` | Audio + optional screenshots → transcript and step-by-step help |
+| POST | `/api/help` | Transcript + optional screenshots → help steps |
 | GET | `/api/help/history` | Past help sessions |
 | POST | `/api/fraud/check` | Message text → verdict |
 | POST | `/api/fraud/decision` | Save user's Delete/Keep choice |
@@ -276,7 +277,7 @@ npx react-native run-android
 
 ## Audio transcription API
 
-Open `http://localhost:3000` (or the port set by `PORT` in `.env`) for the
+Open `http://localhost:5001` (or the port set by `PORT` in `.env`) for the
 browser upload page, or call the API directly. The endpoint sends uploaded
 audio to Google's Gemini API; it does not run a transcription model locally.
 Create a Gemini API key in
@@ -289,6 +290,26 @@ then try the configured fallback model. Set `GEMINI_TRANSCRIPTION_MODEL` and
 `GEMINI_TRANSCRIPTION_FALLBACK_MODEL` in `.env` to change the models. The rate
 limit uses in-memory storage, so its counts reset when the server restarts and
 are not shared between multiple server instances.
+
+## Mobile voice-help API
+
+The phone UI can send a recorded or selected audio file and up to four optional
+screenshots to `POST /api/assist` as `multipart/form-data` (`audio` and repeated
+`images` fields). The backend transcribes the audio, sends the transcript and
+screenshots to Gemini for step-by-step help, and returns:
+
+```json
+{
+  "transcription": "I cannot save a contact.",
+  "steps": ["Open Contacts.", "Tap Add contact."]
+}
+```
+
+Audio files may be up to 25 MB; each screenshot may be up to 8 MB. Temporary
+local and Gemini uploads are removed after processing. The frontend defaults to
+the backend at port 5001 on the same host; set
+`VITE_MOBILE_HELP_API_URL` at frontend build time to override that URL. The
+frontend UI itself runs on port 3000; keep the backend on a different port.
 
 The Gemini API has a limited free tier, but free availability depends on the
 selected model, region, account, and current quota. Check [Gemini API pricing](https://ai.google.dev/gemini-api/docs/pricing)

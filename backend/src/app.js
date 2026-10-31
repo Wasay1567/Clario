@@ -3,7 +3,7 @@ import dotenv from "dotenv";
 import express from "express";
 import { randomUUID } from "node:crypto";
 import fs from "node:fs";
-import { unlink } from "node:fs/promises";
+import { readFile, unlink } from "node:fs/promises";
 import helmet from "helmet";
 import { GoogleGenAI } from "@google/genai";
 import { rateLimit } from "express-rate-limit";
@@ -64,8 +64,35 @@ const upload = multer({
     files: 1,
   },
   fileFilter: (_req, file, callback) => {
-    if (!acceptedAudioTypes.has(file.mimetype)) {
+    if (!isAcceptedAudioType(file.mimetype)) {
       callback(new Error("Unsupported audio type. Upload an audio file."));
+      return;
+    }
+
+    callback(null, true);
+  },
+});
+
+const assistUpload = multer({
+  storage: multer.diskStorage({
+    destination: uploadDirectory,
+    filename: (_req, _file, callback) => {
+      callback(null, `${randomUUID()}.upload`);
+    },
+  }),
+  limits: {
+    fileSize: 25 * 1024 * 1024,
+    files: 5,
+    fields: 0,
+  },
+  fileFilter: (_req, file, callback) => {
+    if (
+      !isAcceptedAudioType(file.mimetype) &&
+      !isAcceptedImageType(file.mimetype)
+    ) {
+      callback(
+        new Error("Unsupported file type. Upload an audio file and optional supported images."),
+      );
       return;
     }
 
@@ -122,6 +149,7 @@ app.use(morgan("dev"));
 app.use(express.static(publicDirectory));
 app.use("/api/transcriptions", transcriptionRateLimit);
 app.use("/api/help", mobileHelpRateLimit);
+app.use("/api/assist", mobileHelpRateLimit);
 
 app.get("/health", (_req, res) => {
   res.json({ status: "ok" });
@@ -184,6 +212,118 @@ app.post("/api/transcriptions", upload.single("audio"), async (req, res) => {
     await removeUpload(req.file.path);
   }
 });
+
+app.post(
+  "/api/assist",
+  assistUpload.fields([
+    { name: "audio", maxCount: 1 },
+    { name: "images", maxCount: 4 },
+  ]),
+  async (req, res) => {
+    const files = req.files ?? {};
+    const audio = files.audio?.[0];
+    const images = files.images ?? [];
+
+    if (!audio) {
+      await removeUploads(Object.values(files).flat());
+      res.status(400).json({ error: 'An audio file is required in the "audio" field.' });
+      return;
+    }
+
+    if (!isAcceptedAudioType(audio.mimetype)) {
+      await removeUploads(Object.values(files).flat());
+      res.status(415).json({ error: "The audio field must contain a supported audio file." });
+      return;
+    }
+
+    if (images.some((image) => image.size > 8 * 1024 * 1024)) {
+      await removeUploads(Object.values(files).flat());
+      res.status(413).json({ error: "Each context image must be 8 MB or smaller." });
+      return;
+    }
+
+    if (images.some((image) => !isAcceptedImageType(image.mimetype))) {
+      await removeUploads(Object.values(files).flat());
+      res.status(415).json({ error: "Context images must be PNG, JPEG, GIF, or WebP." });
+      return;
+    }
+
+    if (!process.env.GEMINI_API_KEY) {
+      await removeUploads(Object.values(files).flat());
+      res
+        .status(503)
+        .json({ error: "Mobile help is not configured. Set GEMINI_API_KEY." });
+      return;
+    }
+
+    let client;
+    let audioFile;
+
+    try {
+      client = new GoogleGenAI({
+        apiKey: process.env.GEMINI_API_KEY,
+        httpOptions: { timeout: 60_000 },
+      });
+      audioFile = await retryProviderRequest(
+        () =>
+          client.files.upload({
+            file: audio.path,
+            config: { mimeType: normalizedMimeType(audio.mimetype) },
+          }),
+        "Audio upload to Gemini",
+      );
+      const transcription = await transcribeWithFallback(
+        client,
+        audioFile,
+        process.env.GEMINI_TRANSCRIPTION_MODEL || "gemini-3.5-transcribe",
+        process.env.GEMINI_TRANSCRIPTION_FALLBACK_MODEL || "gemini-3.8-flash",
+      );
+      const help = await retryProviderRequest(
+        async () =>
+          generateMobileHelp(
+            client,
+            transcription,
+            await Promise.all(
+              images.map(async (image) => ({
+                mimetype: normalizedMimeType(image.mimetype),
+                buffer: await readFile(image.path),
+              })),
+            ),
+            process.env.GEMINI_HELP_MODEL || "gemini-3.5-flash",
+          ),
+        "Mobile help generation",
+      );
+
+      res.json({ transcription, ...help });
+    } catch (error) {
+      console.error("Audio help request failed:", error);
+      if (isQuotaExceeded(error)) {
+        res.status(429).json({
+          error:
+            "Gemini's request quota is exhausted. Check your Google AI Studio quota or billing, or wait for the quota to reset.",
+        });
+      } else if (error?.status === 422) {
+        res.status(502).json({
+          error: "Gemini returned steps in the wrong language. Please try again.",
+        });
+      } else {
+        res.status(502).json({
+          error: "Gemini could not process the audio and generate help steps. Please try again.",
+        });
+      }
+    } finally {
+      if (client && audioFile?.name) {
+        try {
+          await client.files.delete({ name: audioFile.name });
+        } catch (error) {
+          console.error("Failed to remove temporary audio from Gemini:", error);
+        }
+      }
+
+      await removeUploads(Object.values(files).flat());
+    }
+  },
+);
 
 app.post("/api/help", helpImageUpload.array("images", 4), async (req, res) => {
   const transcription = req.body?.transcription;
@@ -262,7 +402,11 @@ app.use((error, _req, res, _next) => {
     return;
   }
 
-  if (error.message === "Unsupported audio type. Upload an audio file.") {
+  if (
+    error.message === "Unsupported audio type. Upload an audio file." ||
+    error.message ===
+      "Unsupported file type. Upload an audio file and optional supported images."
+  ) {
     res.status(415).json({ error: error.message });
     return;
   }
@@ -285,6 +429,31 @@ async function removeUpload(filePath) {
   } catch (error) {
     console.error("Failed to remove temporary audio upload:", error);
   }
+}
+
+async function removeUploads(files) {
+  await Promise.all(files.map((file) => removeUpload(file.path)));
+}
+
+function isQuotaExceeded(error) {
+  return (
+    error?.status === 429 &&
+    /RESOURCE_EXHAUSTED|quota exceeded|daily limit exceeded/i.test(
+      error?.message ?? "",
+    )
+  );
+}
+
+function normalizedMimeType(mimeType) {
+  return mimeType.split(";")[0].trim().toLowerCase();
+}
+
+function isAcceptedAudioType(mimeType) {
+  return acceptedAudioTypes.has(normalizedMimeType(mimeType));
+}
+
+function isAcceptedImageType(mimeType) {
+  return acceptedImageTypes.has(normalizedMimeType(mimeType));
 }
 
 export default app;

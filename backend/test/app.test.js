@@ -99,6 +99,59 @@ test("POST /api/transcriptions rejects unsupported file types", async () => {
   assert.match((await response.json()).error, /unsupported audio type/i);
 });
 
+test("POST /api/assist requires an audio file", async () => {
+  const response = await fetch(`${baseUrl}/api/assist`, {
+    method: "POST",
+    body: new FormData(),
+  });
+
+  assert.equal(response.status, 400);
+  assert.match((await response.json()).error, /audio file is required/i);
+});
+
+test("POST /api/assist rejects an image uploaded in the audio field", async () => {
+  const form = new FormData();
+  form.append("audio", new Blob(["image"], { type: "image/png" }), "screen.png");
+
+  const response = await fetch(`${baseUrl}/api/assist`, {
+    method: "POST",
+    body: form,
+  });
+
+  assert.equal(response.status, 415);
+  assert.match((await response.json()).error, /audio field must contain/i);
+});
+
+test("POST /api/assist accepts recorded audio and multiple images before checking configuration", async () => {
+  const originalApiKey = process.env.GEMINI_API_KEY;
+  delete process.env.GEMINI_API_KEY;
+
+  try {
+    const form = new FormData();
+    form.append(
+      "audio",
+      new Blob(["audio"], { type: "audio/webm;codecs=opus" }),
+      "voice.webm",
+    );
+    form.append("images", new Blob(["first"], { type: "image/png" }), "screen-1.png");
+    form.append("images", new Blob(["second"], { type: "image/jpeg" }), "screen-2.jpg");
+
+    const response = await fetch(`${baseUrl}/api/assist`, {
+      method: "POST",
+      body: form,
+    });
+
+    assert.equal(response.status, 503);
+    assert.match((await response.json()).error, /GEMINI_API_KEY/);
+  } finally {
+    if (originalApiKey === undefined) {
+      delete process.env.GEMINI_API_KEY;
+    } else {
+      process.env.GEMINI_API_KEY = originalApiKey;
+    }
+  }
+});
+
 test("POST /api/help requires a transcription", async () => {
   const response = await fetch(`${baseUrl}/api/help`, {
     method: "POST",
