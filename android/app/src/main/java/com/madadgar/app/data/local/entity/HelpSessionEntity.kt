@@ -1,4 +1,4 @@
-package com.madadgar.app.data.local.entity
+package com.Clario.app.data.local.entity
 
 import androidx.room.Entity
 import androidx.room.PrimaryKey

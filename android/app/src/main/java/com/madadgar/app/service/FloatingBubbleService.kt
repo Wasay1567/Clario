@@ -1,4 +1,4 @@
-package com.madadgar.app.service
+package com.Clario.app.service
 
 import android.app.Notification
 import android.app.PendingIntent
@@ -17,8 +17,8 @@ import android.widget.FrameLayout
 import android.widget.ImageView
 import android.widget.TextView
 import androidx.core.app.NotificationCompat
-import com.madadgar.app.MainActivity
-import com.madadgar.app.MadadgarApplication
+import com.Clario.app.MainActivity
+import com.Clario.app.ClarioApplication
 
 /**
  * Foreground Service that maintains the draggable floating bubble over other apps.
@@ -46,8 +46,8 @@ class FloatingBubbleService : Service() {
             PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
         )
 
-        return NotificationCompat.Builder(this, MadadgarApplication.CHANNEL_BUBBLE_SERVICE)
-            .setContentTitle("Madadgar (مددگار) Active")
+        return NotificationCompat.Builder(this, ClarioApplication.CHANNEL_BUBBLE_SERVICE)
+            .setContentTitle("Clario (مددگار) Active")
             .setContentText("Floating digital helper is ready on your screen")
             .setSmallIcon(android.R.drawable.ic_dialog_info)
             .setContentIntent(pendingIntent)
@@ -83,7 +83,7 @@ class FloatingBubbleService : Service() {
 
         val icon = ImageView(this).apply {
             setImageResource(android.R.drawable.ic_btn_speak_now)
-            contentDescription = "Madadgar Floating Bubble"
+            contentDescription = "Clario Floating Bubble"
         }
         bubbleFrame.addView(icon)
 

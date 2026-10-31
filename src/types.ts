@@ -46,4 +46,4 @@ export interface SmsMessage {
   userDecision?: 'KEEP' | 'DELETE';
 }
 
-export type ScreenAppType = 'madadgar' | 'jazzcash' | 'easypaisa' | 'whatsapp' | 'messages';
+export type ScreenAppType = 'Clario' | 'jazzcash' | 'easypaisa' | 'whatsapp' | 'messages';

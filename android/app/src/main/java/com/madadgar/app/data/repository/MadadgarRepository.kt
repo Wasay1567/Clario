@@ -1,15 +1,15 @@
-package com.madadgar.app.data.repository
+package com.Clario.app.data.repository
 
-import com.madadgar.app.data.local.dao.HelpSessionDao
-import com.madadgar.app.data.local.dao.MessageCheckDao
-import com.madadgar.app.data.local.entity.HelpSessionEntity
-import com.madadgar.app.data.local.entity.MessageCheckEntity
+import com.Clario.app.data.local.dao.HelpSessionDao
+import com.Clario.app.data.local.dao.MessageCheckDao
+import com.Clario.app.data.local.entity.HelpSessionEntity
+import com.Clario.app.data.local.entity.MessageCheckEntity
 import kotlinx.coroutines.flow.Flow
 
 /**
  * Repository coordinating local Room offline database with backend sync.
  */
-class MadadgarRepository(
+class ClarioRepository(
     private val helpSessionDao: HelpSessionDao,
     private val messageCheckDao: MessageCheckDao
 ) {

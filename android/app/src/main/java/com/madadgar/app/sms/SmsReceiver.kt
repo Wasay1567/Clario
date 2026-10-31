@@ -1,4 +1,4 @@
-package com.madadgar.app.sms
+package com.Clario.app.sms
 
 import android.app.NotificationManager
 import android.app.PendingIntent
@@ -8,9 +8,9 @@ import android.content.Intent
 import android.os.Build
 import android.provider.Telephony
 import androidx.core.app.NotificationCompat
-import com.madadgar.app.MainActivity
-import com.madadgar.app.MadadgarApplication
-import com.madadgar.app.data.local.entity.MessageCheckEntity
+import com.Clario.app.MainActivity
+import com.Clario.app.ClarioApplication
+import com.Clario.app.data.local.entity.MessageCheckEntity
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -37,7 +37,7 @@ class SmsReceiver : BroadcastReceiver() {
             val verdict = OfflineFraudDetector.analyze(sender, text)
 
             // Save to offline Room database
-            val app = context.applicationContext as MadadgarApplication
+            val app = context.applicationContext as ClarioApplication
             CoroutineScope(Dispatchers.IO).launch {
                 val entity = MessageCheckEntity(
                     sender = sender,
@@ -69,7 +69,7 @@ class SmsReceiver : BroadcastReceiver() {
             PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
         )
 
-        val notification = NotificationCompat.Builder(context, MadadgarApplication.CHANNEL_FRAUD_ALERTS)
+        val notification = NotificationCompat.Builder(context, ClarioApplication.CHANNEL_FRAUD_ALERTS)
             .setContentTitle("⚠️ فراڈ کا خطرہ! (Scam Alert)")
             .setContentText("یہ میسج مشکوک ہے: ${verdict.reasons.firstOrNull() ?: "فراڈ کا شبہ"}")
             .setStyle(NotificationCompat.BigTextStyle().bigText("فرام: $sender\nیہ میسج دھوکہ دہی پر مبنی ہے۔ کوئی بھی لنک نہ کھولیں اور PIN یا OTP مت دیں۔"))

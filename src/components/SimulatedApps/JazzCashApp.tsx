@@ -60,7 +60,7 @@ export const JazzCashApp: React.FC<JazzCashAppProps> = ({ onTriggerHelp }) => {
                   onClick={() => onTriggerHelp('Mera JazzCash lock hogya hai, biometric mang raha hai')}
                   className="px-3 py-2 bg-white/10 hover:bg-white/20 text-white font-medium text-xs rounded-xl"
                 >
-                  Ask Madadgar
+                  Ask Clario
                 </button>
               </div>
             </div>

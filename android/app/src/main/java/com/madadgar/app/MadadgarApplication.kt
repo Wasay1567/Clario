@@ -1,16 +1,16 @@
-package com.madadgar.app
+package com.Clario.app
 
 import android.app.Application
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.os.Build
-import com.madadgar.app.data.local.MadadgarDatabase
-import com.madadgar.app.data.repository.MadadgarRepository
+import com.Clario.app.data.local.ClarioDatabase
+import com.Clario.app.data.repository.ClarioRepository
 
-class MadadgarApplication : Application() {
+class ClarioApplication : Application() {
 
-    val database by lazy { MadadgarDatabase.getDatabase(this) }
-    val repository by lazy { MadadgarRepository(database.helpSessionDao(), database.messageCheckDao()) }
+    val database by lazy { ClarioDatabase.getDatabase(this) }
+    val repository by lazy { ClarioRepository(database.helpSessionDao(), database.messageCheckDao()) }
 
     override fun onCreate() {
         super.onCreate()
@@ -19,7 +19,7 @@ class MadadgarApplication : Application() {
 
     private fun createNotificationChannels() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val channelName = "Madadgar Floating Service"
+            val channelName = "Clario Floating Service"
             val channelDesc = "Keeps the screen helper bubble active over other apps"
             val importance = NotificationManager.IMPORTANCE_LOW
             val channel = NotificationChannel(CHANNEL_BUBBLE_SERVICE, channelName, importance).apply {
@@ -42,7 +42,7 @@ class MadadgarApplication : Application() {
     }
 
     companion object {
-        const val CHANNEL_BUBBLE_SERVICE = "madadgar_bubble_service"
-        const val CHANNEL_FRAUD_ALERTS = "madadgar_fraud_alerts"
+        const val CHANNEL_BUBBLE_SERVICE = "Clario_bubble_service"
+        const val CHANNEL_FRAUD_ALERTS = "Clario_fraud_alerts"
     }
 }

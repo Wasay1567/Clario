@@ -13,5 +13,5 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "Madadgar"
+rootProject.name = "Clario"
 include(":app")

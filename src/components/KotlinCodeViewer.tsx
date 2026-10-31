@@ -13,10 +13,10 @@ interface CodeFile {
 const kotlinFiles: CodeFile[] = [
   {
     name: 'MainActivity.kt',
-    path: 'app/src/main/java/com/madadgar/app/MainActivity.kt',
+    path: 'app/src/main/java/com/Clario/app/MainActivity.kt',
     language: 'kotlin',
     description: 'Material 3 Jetpack Compose UI, bilingual Urdu/English interface, permission triggers',
-    content: `package com.madadgar.app
+    content: `package com.Clario.app
 
 import android.content.Intent
 import android.net.Uri
@@ -28,8 +28,8 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
-import com.madadgar.app.service.FloatingBubbleService
-import com.madadgar.app.ui.theme.MadadgarTheme
+import com.Clario.app.service.FloatingBubbleService
+import com.Clario.app.ui.theme.ClarioTheme
 
 class MainActivity : ComponentActivity() {
 
@@ -38,7 +38,7 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
 
         setContent {
-            MadadgarTheme {
+            ClarioTheme {
                 MainScreen(
                     onStartBubble = { startBubbleService() },
                     onCheckOverlayPermission = { hasOverlayPermission() },
@@ -74,10 +74,10 @@ class MainActivity : ComponentActivity() {
   },
   {
     name: 'FloatingBubbleService.kt',
-    path: 'app/src/main/java/com/madadgar/app/service/FloatingBubbleService.kt',
+    path: 'app/src/main/java/com/Clario/app/service/FloatingBubbleService.kt',
     language: 'kotlin',
     description: 'Foreground Service maintaining draggable WindowManager overlay over other apps',
-    content: `package com.madadgar.app.service
+    content: `package com.Clario.app.service
 
 import android.app.*
 import android.content.Context
@@ -89,7 +89,7 @@ import android.view.*
 import android.widget.FrameLayout
 import android.widget.ImageView
 import androidx.core.app.NotificationCompat
-import com.madadgar.app.MainActivity
+import com.Clario.app.MainActivity
 
 class FloatingBubbleService : Service() {
 
@@ -135,8 +135,8 @@ class FloatingBubbleService : Service() {
     }
 
     private fun createForegroundNotification(): Notification {
-        return NotificationCompat.Builder(this, "madadgar_bubble_service")
-            .setContentTitle("Madadgar Active")
+        return NotificationCompat.Builder(this, "Clario_bubble_service")
+            .setContentTitle("Clario Active")
             .setContentText("Digital helper ready on screen")
             .setSmallIcon(android.R.drawable.ic_dialog_info)
             .build()
@@ -145,10 +145,10 @@ class FloatingBubbleService : Service() {
   },
   {
     name: 'OfflineFraudDetector.kt',
-    path: 'app/src/main/java/com/madadgar/app/sms/OfflineFraudDetector.kt',
+    path: 'app/src/main/java/com/Clario/app/sms/OfflineFraudDetector.kt',
     language: 'kotlin',
     description: 'Zero-latency on-device offline classifier for Pakistani SMS scams & phishing',
-    content: `package com.madadgar.app.sms
+    content: `package com.Clario.app.sms
 
 data class FraudVerdict(
     val label: Label,
@@ -198,39 +198,39 @@ object OfflineFraudDetector {
 }`
   },
   {
-    name: 'MadadgarDatabase.kt',
-    path: 'app/src/main/java/com/madadgar/app/data/local/MadadgarDatabase.kt',
+    name: 'ClarioDatabase.kt',
+    path: 'app/src/main/java/com/Clario/app/data/local/ClarioDatabase.kt',
     language: 'kotlin',
     description: 'Android Room SQLite database for persistent offline help sessions and fraud logs',
-    content: `package com.madadgar.app.data.local
+    content: `package com.Clario.app.data.local
 
 import android.content.Context
 import androidx.room.*
-import com.madadgar.app.data.local.dao.HelpSessionDao
-import com.madadgar.app.data.local.dao.MessageCheckDao
-import com.madadgar.app.data.local.entity.HelpSessionEntity
-import com.madadgar.app.data.local.entity.MessageCheckEntity
+import com.Clario.app.data.local.dao.HelpSessionDao
+import com.Clario.app.data.local.dao.MessageCheckDao
+import com.Clario.app.data.local.entity.HelpSessionEntity
+import com.Clario.app.data.local.entity.MessageCheckEntity
 
 @Database(
     entities = [HelpSessionEntity::class, MessageCheckEntity::class],
     version = 1,
     exportSchema = false
 )
-abstract class MadadgarDatabase : RoomDatabase() {
+abstract class ClarioDatabase : RoomDatabase() {
 
     abstract fun helpSessionDao(): HelpSessionDao
     abstract fun messageCheckDao(): MessageCheckDao
 
     companion object {
         @Volatile
-        private var INSTANCE: MadadgarDatabase? = null
+        private var INSTANCE: ClarioDatabase? = null
 
-        fun getDatabase(context: Context): MadadgarDatabase {
+        fun getDatabase(context: Context): ClarioDatabase {
             return INSTANCE ?: synchronized(this) {
                 val instance = Room.databaseBuilder(
                     context.applicationContext,
-                    MadadgarDatabase::class.java,
-                    "madadgar_offline_db"
+                    ClarioDatabase::class.java,
+                    "Clario_offline_db"
                 ).build()
                 INSTANCE = instance
                 instance
@@ -246,7 +246,7 @@ abstract class MadadgarDatabase : RoomDatabase() {
     description: 'Android permissions for SYSTEM_ALERT_WINDOW, RECEIVE_SMS, RECORD_AUDIO',
     content: `<?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    package="com.madadgar.app">
+    package="com.Clario.app">
 
     <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
@@ -256,10 +256,10 @@ abstract class MadadgarDatabase : RoomDatabase() {
     <uses-permission android:name="android.permission.INTERNET" />
 
     <application
-        android:name=".MadadgarApplication"
-        android:label="Madadgar"
+        android:name=".ClarioApplication"
+        android:label="Clario"
         android:supportsRtl="true"
-        android:theme="@style/Theme.Madadgar">
+        android:theme="@style/Theme.Clario">
 
         <activity
             android:name=".MainActivity"
@@ -298,11 +298,11 @@ abstract class MadadgarDatabase : RoomDatabase() {
 }
 
 android {
-    namespace = "com.madadgar.app"
+    namespace = "com.Clario.app"
     compileSdk = 35
 
     defaultConfig {
-        applicationId = "com.madadgar.app"
+        applicationId = "com.Clario.app"
         minSdk = 26
         targetSdk = 35
         versionCode = 1
@@ -341,7 +341,7 @@ export const KotlinCodeViewer: React.FC = () => {
     setIsDownloading(true);
     try {
       const zip = new JSZip();
-      const folder = zip.folder('Madadgar-Android-Kotlin');
+      const folder = zip.folder('Clario-Android-Kotlin');
 
       // Add each file to zip
       kotlinFiles.forEach((file) => {
@@ -350,14 +350,14 @@ export const KotlinCodeViewer: React.FC = () => {
 
       folder?.file(
         'README.md',
-        `# Madadgar (مددگار) Native Android Project\nBuilt for Build4Better Hackathon 2026.\nOpen this directory in Android Studio to build and deploy to device.`
+        `# Clario (مددگار) Native Android Project\nBuilt for Build4Better Hackathon 2026.\nOpen this directory in Android Studio to build and deploy to device.`
       );
 
       const blob = await zip.generateAsync({ type: 'blob' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = 'Madadgar-Android-Kotlin-Project.zip';
+      a.download = 'Clario-Android-Kotlin-Project.zip';
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);

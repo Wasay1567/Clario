@@ -10,7 +10,7 @@ import { JazzCashApp } from './components/SimulatedApps/JazzCashApp';
 import { EasypaisaApp } from './components/SimulatedApps/EasypaisaApp';
 import { WhatsAppApp } from './components/SimulatedApps/WhatsAppApp';
 import { MessagesApp } from './components/SimulatedApps/MessagesApp';
-import { MadadgarHomeApp } from './components/SimulatedApps/MadadgarHomeApp';
+import { ClarioHomeApp } from './components/SimulatedApps/ClarioHomeApp';
 import { Language, ScreenAppType, HelpSession, SmsMessage, HelpGuidance } from './types';
 import { initialSmsMessages } from './data/mockScreens';
 import { offlineStorage } from './services/offlineStorage';
@@ -32,7 +32,7 @@ import {
 
 export default function App() {
   // Navigation & Screen states
-  const [currentApp, setCurrentApp] = useState<ScreenAppType>('madadgar');
+  const [currentApp, setCurrentApp] = useState<ScreenAppType>('Clario');
   const [viewMode, setViewMode] = useState<'simulator' | 'code'>('simulator');
   const [language, setLanguage] = useState<Language>('ur');
   const [isOffline, setIsOffline] = useState(false);
@@ -117,7 +117,7 @@ export default function App() {
       verdict: 'FRAUD',
     };
     setMessages((prev) => [scam, ...prev]);
-    showToast('⚠️ New SMS Arrived: High-Risk Scam intercepted by Madadgar!');
+    showToast('⚠️ New SMS Arrived: High-Risk Scam intercepted by Clario!');
   };
 
   const isUrdu = language === 'ur';
@@ -135,7 +135,7 @@ export default function App() {
             <div>
               <div className="flex items-center gap-2">
                 <span className="font-extrabold text-base tracking-tight text-white">
-                  Madadgar (مددگار)
+                  Clario (مددگار)
                 </span>
                 <span className="px-2 py-0.5 rounded-full bg-teal-500/10 border border-teal-500/30 text-teal-400 text-[10px] font-bold">
                   Android 10+ • Material 3
@@ -247,9 +247,9 @@ export default function App() {
 
                 <div className="space-y-1.5">
                   <button
-                    onClick={() => setCurrentApp('madadgar')}
+                    onClick={() => setCurrentApp('Clario')}
                     className={`w-full p-2.5 rounded-2xl text-xs font-bold flex items-center justify-between transition ${
-                      currentApp === 'madadgar'
+                      currentApp === 'Clario'
                         ? 'bg-teal-600 text-white shadow-md'
                         : 'bg-slate-800/60 hover:bg-slate-800 text-slate-300'
                     }`}
@@ -258,9 +258,9 @@ export default function App() {
                       <div className="w-6 h-6 rounded-lg bg-teal-800 text-white flex items-center justify-center font-bold text-xs">
                         م
                       </div>
-                      <span>Madadgar Home App</span>
+                      <span>Clario Home App</span>
                     </div>
-                    {currentApp === 'madadgar' && <CheckCircle2 className="w-4 h-4" />}
+                    {currentApp === 'Clario' && <CheckCircle2 className="w-4 h-4" />}
                   </button>
 
                   <button
@@ -337,7 +337,7 @@ export default function App() {
               <div className="p-4 rounded-3xl bg-slate-900/60 border border-slate-800 text-xs space-y-2 text-slate-300">
                 <div className="font-bold text-teal-400 flex items-center gap-1.5">
                   <Sparkles className="w-4 h-4" />
-                  <span>How to test Madadgar:</span>
+                  <span>How to test Clario:</span>
                 </div>
                 <ol className="list-decimal list-inside space-y-1.5 text-[11px] text-slate-400">
                   <li>
@@ -360,8 +360,8 @@ export default function App() {
             <div className="relative">
               <AndroidDeviceFrame activeAppTitle={currentApp}>
                 {/* Active Screen App */}
-                {currentApp === 'madadgar' && (
-                  <MadadgarHomeApp
+                {currentApp === 'Clario' && (
+                  <ClarioHomeApp
                     language={language}
                     onLanguageChange={setLanguage}
                     onStartHelp={() => setIsHelpOpen(true)}

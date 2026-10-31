@@ -1,9 +1,9 @@
 // Offline Storage & Synchronization simulating Android Room Database (SQLite)
 import { HelpSession, FraudCheckResult, Language } from '../types';
 
-const SESSIONS_STORAGE_KEY = 'madadgar_room_help_sessions';
-const FRAUD_STORAGE_KEY = 'madadgar_room_fraud_checks';
-const SETTINGS_STORAGE_KEY = 'madadgar_room_user_settings';
+const SESSIONS_STORAGE_KEY = 'Clario_room_help_sessions';
+const FRAUD_STORAGE_KEY = 'Clario_room_fraud_checks';
+const SETTINGS_STORAGE_KEY = 'Clario_room_user_settings';
 
 export interface UserSettings {
   language: Language;

@@ -70,7 +70,7 @@ export const FloatingBubble: React.FC<FloatingBubbleProps> = ({
           className="absolute bottom-16 left-0 w-64 p-3 bg-neutral-900/95 backdrop-blur-md border border-teal-500/50 rounded-2xl shadow-2xl text-white space-y-2 animate-in fade-in zoom-in-95 duration-150"
         >
           <div className="flex items-center justify-between pb-2 border-b border-neutral-700 text-xs">
-            <span className="font-bold text-teal-400">مددگار (Madadgar) Helper</span>
+            <span className="font-bold text-teal-400">مددگار (Clario) Helper</span>
             <button
               onClick={() => setShowMenu(false)}
               className="p-1 text-neutral-400 hover:text-white rounded"

@@ -1,7 +1,7 @@
-# Madadgar (مددگار) — A Digital Helper That Lives On Your Screen
+# Clario (مددگار) — A Digital Helper That Lives On Your Screen
 
 > **Build4Better Hackathon 2026 — NED University, Department of Software Engineering**
-> *(Replace "Madadgar" with your final app name.)*
+> *(Replace "Clario" with your final app name.)*
 
 ## 1. Target User and Problem
 
@@ -13,7 +13,7 @@ The issue is not intelligence. Technology is built for people who already speak 
 
 ## 2. Our Solution
 
-Madadgar is an Android app that puts a **small floating help bubble on top of every app**. When the user gets stuck in *any* app, they:
+Clario is an Android app that puts a **small floating help bubble on top of every app**. When the user gets stuck in *any* app, they:
 
 1. Tap the bubble.
 2. **Say the problem in their own words** (Urdu / Roman Urdu / English).
@@ -213,7 +213,7 @@ Access to SMS is sensitive, so we apply these rules:
 ## 11. Project Structure
 
 ```
-madadgar/
+Clario/
 ├── mobile/                 # React Native app
 │   ├── src/screens/        # Onboarding, Home, Help, FraudCheck, History
 │   ├── src/components/     # Large buttons, StepCard, VerdictCard
@@ -240,7 +240,7 @@ madadgar/
 ```bash
 # 1. Clone
 git clone <YOUR_REPO_URL>
-cd madadgar
+cd Clario
 
 # 2. Backend
 cd backend
@@ -299,7 +299,7 @@ All team members understand and can explain the submitted code.
 > Edit this list to match exactly what is real in your final version. Judges ask for a clear line between working features and simulations.
 
 - **Android only.** iOS does not allow overlay bubbles, screen capture of other apps, or SMS reading.
-- **"Delete" for SMS:** Android only lets an app delete messages if it is the *default SMS app*. In this version, Delete removes the message from Madadgar's view and shows the user simple steps to delete it in their SMS app. `<Change this if you implement full deletion.>`
+- **"Delete" for SMS:** Android only lets an app delete messages if it is the *default SMS app*. In this version, Delete removes the message from Clario's view and shows the user simple steps to delete it in their SMS app. `<Change this if you implement full deletion.>`
 - SMS permission would face strict review for Google Play release. This build is distributed as an APK for the hackathon.
 - AI guidance can be wrong or incomplete. The app tells users never to share OTP/PIN and to ask a family member when unsure.
 - The fraud model's accuracy depends on our small hand-collected Pakistani-message dataset. Real-world accuracy will be lower than test accuracy until more data is collected.

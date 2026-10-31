@@ -19,7 +19,7 @@ export const MessagesApp: React.FC<MessagesAppProps> = ({ messages, onCheckMessa
         </div>
         <div className="flex items-center gap-1.5 px-3 py-1 bg-emerald-500/10 border border-emerald-500/30 rounded-full text-xs text-emerald-400 font-semibold">
           <ShieldCheck className="w-3.5 h-3.5" />
-          <span>Madadgar Shield Active</span>
+          <span>Clario Shield Active</span>
         </div>
       </div>
 
@@ -91,7 +91,7 @@ export const MessagesApp: React.FC<MessagesAppProps> = ({ messages, onCheckMessa
                   className="flex items-center gap-1 px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold rounded-xl shadow transition"
                 >
                   <ShieldAlert className="w-3.5 h-3.5" />
-                  <span>{msg.verdict ? 'View Verdict' : 'Check with Madadgar'}</span>
+                  <span>{msg.verdict ? 'View Verdict' : 'Check with Clario'}</span>
                 </button>
               </div>
             </div>

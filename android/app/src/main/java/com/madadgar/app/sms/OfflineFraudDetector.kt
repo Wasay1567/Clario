@@ -1,4 +1,4 @@
-package com.madadgar.app.sms
+package com.Clario.app.sms
 
 data class FraudVerdict(
     val label: Label,

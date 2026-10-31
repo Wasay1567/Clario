@@ -49,7 +49,7 @@ export const WhatsAppApp: React.FC<WhatsAppAppProps> = ({ onTriggerHelp }) => {
             onClick={() => onTriggerHelp('WhatsApp video call mein awaz nahi aa rahi aur mic band hai')}
             className="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-xs font-bold"
           >
-            Ask Madadgar
+            Ask Clario
           </button>
         </div>
       </div>

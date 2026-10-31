@@ -1,4 +1,4 @@
-package com.madadgar.app
+package com.Clario.app
 
 import android.content.Intent
 import android.net.Uri
@@ -30,8 +30,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.madadgar.app.service.FloatingBubbleService
-import com.madadgar.app.ui.theme.MadadgarTheme
+import com.Clario.app.service.FloatingBubbleService
+import com.Clario.app.ui.theme.ClarioTheme
 
 class MainActivity : ComponentActivity() {
 
@@ -40,7 +40,7 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
 
         setContent {
-            MadadgarTheme {
+            ClarioTheme {
                 MainScreen(
                     onStartBubble = { startBubbleService() },
                     onCheckOverlayPermission = { hasOverlayPermission() },
@@ -93,7 +93,7 @@ fun MainScreen(
                 title = {
                     Column {
                         Text(
-                            text = if (isUrdu) "مددگار (Madadgar)" else "Madadgar Screen Helper",
+                            text = if (isUrdu) "مددگار (Clario)" else "Clario Screen Helper",
                             fontSize = 24.sp,
                             fontWeight = FontWeight.Bold
                         )
@@ -303,7 +303,7 @@ fun HomeScreenTab(
                         text = if (isBubbleRunning)
                             (if (isUrdu) "ببل ایکٹو ہے (چل رہا ہے)" else "Bubble Active & Ready")
                         else
-                            (if (isUrdu) "مددگار ببل شروع کریں" else "Start Madadgar Bubble"),
+                            (if (isUrdu) "مددگار ببل شروع کریں" else "Start Clario Bubble"),
                         fontSize = 20.sp,
                         fontWeight = FontWeight.Bold
                     )

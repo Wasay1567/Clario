@@ -2,7 +2,7 @@ import React from 'react';
 import { Language, HelpSession, FraudCheckResult } from '../../types';
 import { Mic, ShieldAlert, History, Users, Sparkles, Volume2, CheckCircle2, ChevronRight, Lock, Database } from 'lucide-react';
 
-interface MadadgarHomeAppProps {
+interface ClarioHomeAppProps {
   language: Language;
   onLanguageChange: (lang: Language) => void;
   onStartHelp: () => void;
@@ -16,7 +16,7 @@ interface MadadgarHomeAppProps {
   fraudBlockedCount: number;
 }
 
-export const MadadgarHomeApp: React.FC<MadadgarHomeAppProps> = ({
+export const ClarioHomeApp: React.FC<ClarioHomeAppProps> = ({
   language,
   onLanguageChange,
   onStartHelp,
@@ -42,7 +42,7 @@ export const MadadgarHomeApp: React.FC<MadadgarHomeAppProps> = ({
             </div>
             <div>
               <h1 className="text-2xl font-black tracking-tight leading-none">
-                {isUrdu ? 'مددگار (Madadgar)' : 'Madadgar Screen Companion'}
+                {isUrdu ? 'مددگار (Clario)' : 'Clario Screen Companion'}
               </h1>
               <p className="text-xs text-teal-200 mt-1">
                 {isUrdu ? 'بزرگوں کا ڈیجیٹل محافظ اور رہبر' : 'Material 3 Digital Screen Assistant'}

@@ -1,4 +1,4 @@
-package com.madadgar.app.service
+package com.Clario.app.service
 
 import android.app.Activity
 import android.app.Notification
@@ -14,7 +14,7 @@ import android.media.projection.MediaProjection
 import android.media.projection.MediaProjectionManager
 import android.os.IBinder
 import androidx.core.app.NotificationCompat
-import com.madadgar.app.MadadgarApplication
+import com.Clario.app.ClarioApplication
 
 /**
  * Android MediaProjection Service for on-demand screenshot capture.
@@ -50,7 +50,7 @@ class ScreenCaptureService : Service() {
 
         imageReader = ImageReader.newInstance(width, height, PixelFormat.RGBA_8888, 2)
         virtualDisplay = mediaProjection?.createVirtualDisplay(
-            "MadadgarScreenCapture",
+            "ClarioScreenCapture",
             width, height, density,
             DisplayManager.VIRTUAL_DISPLAY_FLAG_AUTO_MIRROR,
             imageReader?.surface, null, null
@@ -68,7 +68,7 @@ class ScreenCaptureService : Service() {
     }
 
     private fun createCaptureNotification(): Notification {
-        return NotificationCompat.Builder(this, MadadgarApplication.CHANNEL_BUBBLE_SERVICE)
+        return NotificationCompat.Builder(this, ClarioApplication.CHANNEL_BUBBLE_SERVICE)
             .setContentTitle("Screen Assistance")
             .setContentText("Capturing screen once for digital guidance")
             .setSmallIcon(android.R.drawable.ic_menu_camera)

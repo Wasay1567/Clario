@@ -134,7 +134,7 @@ app.post('/api/help', async (req, res) => {
 
     // System prompt tailored for elderly Pakistani users in Urdu/English
     const prompt = `
-You are "Madadgar" (مددگار), a patient, warm, and loving digital assistant helping an elderly Pakistani parent/grandparent (age 55+) navigate an Android phone.
+You are "Clario" (مددگار), a patient, warm, and loving digital assistant helping an elderly Pakistani parent/grandparent (age 55+) navigate an Android phone.
 User's Language: ${language} (ur = Urdu script, ur-roman = Roman Urdu, en = English).
 Current App: ${appContext}.
 User's Spoken Query/Problem: "${sanitizedQuery}".
@@ -355,7 +355,7 @@ function getHeuristicGuidance(appContext: string, query: string, lang: string) {
         steps: [
           { n: 1, text: 'Tap the main primary button visible on the lower section of your screen.', hint: 'Usually blue or green' },
           { n: 2, text: 'If a confirmation dialog appears, tap Allow or Continue.', hint: 'Check that you trust the app' },
-          { n: 3, text: 'If stuck, tap the Madadgar bubble again for immediate next guidance.', hint: 'We are here to assist' }
+          { n: 3, text: 'If stuck, tap the Clario bubble again for immediate next guidance.', hint: 'We are here to assist' }
         ],
         warning: 'Keep your personal codes and passwords strictly private.',
         needsMoreInfo: false
@@ -564,7 +564,7 @@ async function startServer() {
   }
 
   app.listen(Number(PORT), '0.0.0.0', () => {
-    console.log(`Madadgar server running on http://0.0.0.0:${PORT}`);
+    console.log(`Clario server running on http://0.0.0.0:${PORT}`);
   });
 }
 

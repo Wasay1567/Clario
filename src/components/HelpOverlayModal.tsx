@@ -175,7 +175,7 @@ export const HelpOverlayModal: React.FC<HelpOverlayModalProps> = ({
             </div>
             <div>
               <div className="font-bold text-lg text-slate-900">
-                {isUrdu ? 'مددگار اسکرین گائیڈ' : 'Madadgar Screen Guide'}
+                {isUrdu ? 'مددگار اسکرین گائیڈ' : 'Clario Screen Guide'}
               </div>
               <div className="text-xs text-slate-500">
                 {currentAppName} • {isOffline ? 'Offline Mode' : 'Gemini Multimodal AI'}
