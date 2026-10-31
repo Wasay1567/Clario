@@ -7,6 +7,9 @@ plugins {
 android {
     namespace = "com.Clario.app"
     compileSdk = 35
+    buildFeatures {
+        buildConfig = true
+    }
 
     defaultConfig {
         applicationId = "com.Clario.app"
@@ -14,6 +17,11 @@ android {
         targetSdk = 35
         versionCode = 1
         versionName = "1.0.0"
+        buildConfigField(
+            "String",
+            "FRAUD_API_BASE_URL",
+            "\"${project.findProperty("fraudApiBaseUrl") ?: "http://10.0.2.2:8000/"}\""
+        )
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {

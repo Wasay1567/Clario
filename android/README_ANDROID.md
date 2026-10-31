@@ -16,8 +16,16 @@ This directory contains the complete, production-grade native Android codebase f
 4. Connect a physical Android 10+ device via USB (or start an emulator with Google Play Services).
 5. Click **Run 'app'** (`Shift + F10`).
 
+## Live fraud notification monitoring
+
+Unknown-contact SMS messages are sent to the FastAPI service and the result is posted as a warning notification. WhatsApp monitoring requires the user to enable **Clario notification fraud checker** in Android Settings > Notification access. The app does not delete, block, forward, or report messages.
+
+For an Android emulator, start the backend on the host with `uvicorn fraud_detection.main:app --host 127.0.0.1 --port 8000`; the app uses `http://10.0.2.2:8000/`. For a physical device, pass a reachable HTTPS or LAN base URL with `-PfraudApiBaseUrl=https://your-host.example/`. Cleartext HTTP is enabled for local development only; production deployments must use HTTPS.
+
 ## Permissions Granted at Runtime
 - `SYSTEM_ALERT_WINDOW`: Display over other apps for the floating bubble.
 - `RECORD_AUDIO`: Microphone speech recording for problem descriptions.
 - `RECEIVE_SMS` & `READ_SMS`: Live SMS scam shield.
+- `READ_CONTACTS`: Determines whether an SMS/WhatsApp sender is already known to the user.
+- Notification access: Reads WhatsApp notification previews only after explicit user approval.
 - `FOREGROUND_SERVICE`: Keeping the assistant alive while navigating other apps.

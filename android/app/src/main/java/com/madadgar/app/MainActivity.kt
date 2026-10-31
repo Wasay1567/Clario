@@ -5,6 +5,8 @@ import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.provider.Settings
+import android.Manifest
+import androidx.core.app.ActivityCompat
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -32,6 +34,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.Clario.app.service.FloatingBubbleService
 import com.Clario.app.ui.theme.ClarioTheme
+import com.Clario.app.data.local.FraudResultStore
+import com.Clario.app.data.remote.StoredFraudResult
+import com.Clario.app.monitoring.SenderTrustChecker
 
 class MainActivity : ComponentActivity() {
 
@@ -44,7 +49,10 @@ class MainActivity : ComponentActivity() {
                 MainScreen(
                     onStartBubble = { startBubbleService() },
                     onCheckOverlayPermission = { hasOverlayPermission() },
-                    onRequestOverlayPermission = { requestOverlayPermission() }
+                    onRequestOverlayPermission = { requestOverlayPermission() },
+                    onRequestMonitoringPermissions = { requestMonitoringPermissions() },
+                    onOpenNotificationSettings = { openNotificationSettings() },
+                    openFraudTab = intent.getBooleanExtra("OPEN_FRAUD_TAB", false)
                 )
             }
         }
@@ -72,6 +80,21 @@ class MainActivity : ComponentActivity() {
             startService(intent)
         }
     }
+
+    private fun requestMonitoringPermissions() {
+        val permissions = buildList {
+            add(Manifest.permission.RECEIVE_SMS)
+            add(Manifest.permission.READ_CONTACTS)
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                add(Manifest.permission.POST_NOTIFICATIONS)
+            }
+        }.toTypedArray()
+        ActivityCompat.requestPermissions(this, permissions, 200)
+    }
+
+    private fun openNotificationSettings() {
+        startActivity(Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS))
+    }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -79,10 +102,13 @@ class MainActivity : ComponentActivity() {
 fun MainScreen(
     onStartBubble: () -> Unit,
     onCheckOverlayPermission: () -> Boolean,
-    onRequestOverlayPermission: () -> Unit
+    onRequestOverlayPermission: () -> Unit,
+    onRequestMonitoringPermissions: () -> Unit,
+    onOpenNotificationSettings: () -> Unit,
+    openFraudTab: Boolean
 ) {
     val context = LocalContext.current
-    var selectedTab by remember { mutableIntStateOf(0) }
+    var selectedTab by remember { mutableIntStateOf(if (openFraudTab) 1 else 0) }
     var isUrdu by remember { mutableStateOf(true) }
     var hasPermission by remember { mutableStateOf(onCheckOverlayPermission()) }
     var isBubbleRunning by remember { mutableStateOf(false) }
@@ -176,7 +202,11 @@ fun MainScreen(
                         isBubbleRunning = true
                     }
                 )
-                1 -> FraudCheckTab(isUrdu = isUrdu)
+                1 -> FraudCheckTab(
+                    isUrdu = isUrdu,
+                    onRequestMonitoringPermissions = onRequestMonitoringPermissions,
+                    onOpenNotificationSettings = onOpenNotificationSettings
+                )
                 2 -> HistoryTab(isUrdu = isUrdu)
                 3 -> FamilyTab(isUrdu = isUrdu)
             }
@@ -407,10 +437,22 @@ fun FeatureCard(
 }
 
 @Composable
-fun FraudCheckTab(isUrdu: Boolean) {
+fun FraudCheckTab(
+    isUrdu: Boolean,
+    onRequestMonitoringPermissions: () -> Unit,
+    onOpenNotificationSettings: () -> Unit
+) {
+    val context = LocalContext.current
+    var latestResult by remember { mutableStateOf<StoredFraudResult?>(null) }
+
+    LaunchedEffect(Unit) {
+        latestResult = FraudResultStore.load(context)
+    }
+
     Column(
         modifier = Modifier
             .fillMaxSize()
+            .verticalScroll(rememberScrollState())
             .padding(20.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
@@ -427,7 +469,77 @@ fun FraudCheckTab(isUrdu: Boolean) {
             fontSize = 16.sp,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
-        // Tab contents shown with interactive cards
+        Card(
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.secondaryContainer),
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                Text(
+                    text = if (isUrdu) "خودکار حفاظت فعال کریں" else "Enable automatic protection",
+                    fontSize = 19.sp,
+                    fontWeight = FontWeight.Bold
+                )
+                Text(
+                    text = if (isUrdu)
+                        "نامعلوم SMS کے لیے اجازت دیں۔ WhatsApp کے لیے Android Notification Access بھی فعال کریں۔"
+                    else
+                        "Unknown SMS messages are checked automatically. WhatsApp requires Android Notification Access.",
+                    fontSize = 15.sp
+                )
+                Button(onClick = onRequestMonitoringPermissions, modifier = Modifier.fillMaxWidth()) {
+                    Text(if (isUrdu) "SMS اجازت دیں" else "Allow SMS and contact access")
+                }
+                OutlinedButton(onClick = onOpenNotificationSettings, modifier = Modifier.fillMaxWidth()) {
+                    Text(if (isUrdu) "WhatsApp اجازت کھولیں" else "Enable WhatsApp monitoring")
+                }
+                Text(
+                    text = if (SenderTrustChecker.hasNotificationAccess(context))
+                        if (isUrdu) "WhatsApp نگرانی فعال ہے" else "WhatsApp monitoring is enabled"
+                    else
+                        if (isUrdu) "WhatsApp نگرانی ابھی فعال نہیں" else "WhatsApp monitoring is not enabled",
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+        }
+
+        latestResult?.let { stored ->
+            val result = stored.result
+            val resultColor = when (result.classification.lowercase()) {
+                "fraud" -> MaterialTheme.colorScheme.errorContainer
+                "safe" -> MaterialTheme.colorScheme.tertiaryContainer
+                else -> MaterialTheme.colorScheme.secondaryContainer
+            }
+            Card(
+                colors = CardDefaults.cardColors(containerColor = resultColor),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Column(modifier = Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    Text(
+                        text = if (isUrdu) "تازہ ترین نتیجہ" else "Latest notification result",
+                        fontSize = 20.sp,
+                        fontWeight = FontWeight.Bold
+                    )
+                    Text("${stored.source}: ${stored.sender}", fontWeight = FontWeight.SemiBold)
+                    Text(
+                        text = result.classification.replace('_', ' ').uppercase(),
+                        fontSize = 22.sp,
+                        fontWeight = FontWeight.Bold
+                    )
+                    Text("Risk: ${result.riskLevel} • ${(result.fraudProbability * 100).toInt()}% fraud probability")
+                    Text(result.explanation, fontSize = 16.sp)
+                    if (result.riskFactors.isNotEmpty()) {
+                        Text("Risk factors: ${result.riskFactors.joinToString(", ")}")
+                    }
+                    Text("Recommended actions", fontWeight = FontWeight.Bold)
+                    result.recommendedAction.forEach { action ->
+                        Text("• $action", fontSize = 15.sp)
+                    }
+                }
+            }
+        } ?: Text(
+            text = if (isUrdu) "ابھی کوئی اطلاع چیک نہیں ہوئی۔" else "No notification has been checked yet.",
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
     }
 }
 
