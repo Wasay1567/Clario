@@ -1,5 +1,5 @@
 import cors from "cors";
-import "dotenv/config";
+import dotenv from "dotenv";
 import express from "express";
 import { randomUUID } from "node:crypto";
 import fs from "node:fs";
@@ -14,15 +14,19 @@ import multer from "multer";
 import { generateMobileHelp } from "./mobileHelp.js";
 import { retryProviderRequest, transcribeWithFallback } from "./transcription.js";
 
-const app = express();
-const uploadDirectory = path.resolve(
+const backendDirectory = path.resolve(
   path.dirname(fileURLToPath(import.meta.url)),
   "..",
+);
+dotenv.config({ path: path.join(backendDirectory, ".env") });
+
+const app = express();
+const uploadDirectory = path.resolve(
+  backendDirectory,
   "uploads",
 );
 const publicDirectory = path.resolve(
-  path.dirname(fileURLToPath(import.meta.url)),
-  "..",
+  backendDirectory,
   "public",
 );
 
@@ -221,6 +225,27 @@ app.post("/api/help", helpImageUpload.array("images", 4), async (req, res) => {
     res.json(help);
   } catch (error) {
     console.error("Mobile help generation failed:", error);
+    if (
+      error?.status === 429 &&
+      /RESOURCE_EXHAUSTED|quota exceeded|daily limit exceeded/i.test(
+        error?.message ?? "",
+      )
+    ) {
+      res.status(429).json({
+        error:
+          "Gemini's request quota is exhausted. Check your Google AI Studio quota or billing, or wait for the quota to reset.",
+      });
+      return;
+    }
+
+    if (error?.status === 422) {
+      res.status(502).json({
+        error:
+          "Gemini returned steps in the wrong language. Please try again.",
+      });
+      return;
+    }
+
     res
       .status(502)
       .json({

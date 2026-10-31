@@ -9,7 +9,7 @@ export async function retryProviderRequest(operation, description) {
     try {
       return await operation();
     } catch (error) {
-      if (attempt === maxAttempts || !isRetryable(error)) {
+      if (attempt === maxAttempts || isQuotaExceeded(error) || !isRetryable(error)) {
         throw error;
       }
 
@@ -70,6 +70,15 @@ export async function transcribeWithFallback(
   }
 
   throw lastError ?? new Error("No transcription models are configured.");
+}
+
+function isQuotaExceeded(error) {
+  return (
+    error?.status === 429 &&
+    /RESOURCE_EXHAUSTED|quota exceeded|daily limit exceeded/i.test(
+      error?.message ?? "",
+    )
+  );
 }
 
 function isRetryable(error) {

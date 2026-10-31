@@ -2,7 +2,10 @@ import assert from "node:assert/strict";
 import { after, before, test } from "node:test";
 import app from "../src/app.js";
 import { generateMobileHelp } from "../src/mobileHelp.js";
-import { transcribeWithFallback } from "../src/transcription.js";
+import {
+  retryProviderRequest,
+  transcribeWithFallback,
+} from "../src/transcription.js";
 
 let server;
 let baseUrl;
@@ -322,6 +325,24 @@ test("transcription retries temporary provider errors", async () => {
 
   assert.equal(text, "Recovered transcript");
   assert.equal(attempts, 2);
+});
+
+test("provider retries do not repeat quota-exhausted requests", async () => {
+  let attempts = 0;
+  const error = new Error(
+    "RESOURCE_EXHAUSTED: Generate content requests per day limit exceeded.",
+  );
+  error.status = 429;
+
+  await assert.rejects(
+    retryProviderRequest(async () => {
+      attempts += 1;
+      throw error;
+    }, "Mobile help generation"),
+    /RESOURCE_EXHAUSTED/,
+  );
+
+  assert.equal(attempts, 1);
 });
 
 test("transcription asks Gemini to preserve the spoken language and Urdu script", async () => {
