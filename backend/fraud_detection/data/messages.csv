@@ -1,0 +1,21 @@
+message,label,language,category
+"Your JazzCash account will be blocked. Share your OTP immediately to verify.",fraud,english,otp_theft
+"Easypaisa refund pending. Pay a processing fee and send your PIN.",fraud,english,fake_refund
+"Congratulations you won a prize. Send 500 rupees fee to claim.",fraud,english,fake_prize
+"BISP cash grant approved. WhatsApp your CNIC and OTP to receive 25000.",fraud,english,fake_bisp
+"Your bank account will expire today. Verify at http://bit.ly/account-check",fraud,english,bank_phishing
+"Apka JazzCash account band ho jayega, OTP bhej kar verify karein.",fraud,roman_urdu,otp_theft
+"Aap ko inaami raqam mili hai, processing fee jama karain.",fraud,roman_urdu,fake_prize
+"Aap ka BISP inaam tayar hai, CNIC aur code WhatsApp karein.",fraud,roman_urdu,fake_bisp
+"آپ کا بینک اکاؤنٹ بند ہو جائے گا، اپنا پن بھیجیں۔",fraud,urdu,bank_phishing
+"آپ کو انعام ملا ہے، رقم وصول کرنے کے لیے فیس جمع کریں۔",fraud,urdu,fake_prize
+"Do not share your OTP with anyone. This is a security reminder from your bank.",safe,english,legitimate_otp
+"Your JazzCash transaction of Rs 500 was completed successfully.",safe,english,legitimate_wallet
+"Your Easypaisa balance was updated after your payment.",safe,english,legitimate_wallet
+"HBL statement for October is ready in the official mobile app.",safe,english,legitimate_bank
+"Meeting moved to 5 pm today. Please call me when you arrive.",safe,english,normal_message
+"OTP 2468 is for your login. Never share this code with anyone.",safe,english,legitimate_otp
+"Aaj ghar jaldi aa jana, chai tayar hai.",safe,roman_urdu,normal_message
+"آپ کے اکاؤنٹ میں رقم جمع ہو گئی ہے۔",safe,urdu,legitimate_bank
+"Your parcel has been delivered successfully.",safe,english,normal_message
+"Kal bank ke official app mein statement check kar lena.",safe,roman_urdu,legitimate_bank
