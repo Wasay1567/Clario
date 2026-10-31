@@ -1,14 +1,9 @@
 package com.madadgar.app.sms
 
-import android.app.NotificationManager
-import android.app.PendingIntent
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
-import android.os.Build
 import android.provider.Telephony
-import androidx.core.app.NotificationCompat
-import com.madadgar.app.MainActivity
 import com.madadgar.app.MadadgarApplication
 import com.madadgar.app.data.local.entity.MessageCheckEntity
 import kotlinx.coroutines.CoroutineScope
@@ -17,7 +12,7 @@ import kotlinx.coroutines.launch
 
 /**
  * BroadcastReceiver for incoming SMS.
- * Automatically runs the offline fraud detector and raises urgent alerts for scams.
+ * Runs the offline fraud detector, saves the verdict, and shows a verdict notification.
  */
 class SmsReceiver : BroadcastReceiver() {
 
@@ -36,50 +31,27 @@ class SmsReceiver : BroadcastReceiver() {
             val text = fullText.toString()
             val verdict = OfflineFraudDetector.analyze(sender, text)
 
-            // Save to offline Room database
+            // Save to offline Room database, then notify the user
             val app = context.applicationContext as MadadgarApplication
+            val pending = goAsync()
             CoroutineScope(Dispatchers.IO).launch {
-                val entity = MessageCheckEntity(
-                    sender = sender,
-                    sanitizedText = verdict.sanitizedPreview,
-                    label = verdict.label.name,
-                    confidence = verdict.confidence,
-                    reasons = verdict.reasons.joinToString(" • "),
-                    userDecision = null,
-                    timestamp = System.currentTimeMillis()
-                )
-                app.repository.saveMessageCheck(entity)
-            }
-
-            // If FRAUD detected, trigger immediate prominent alert
-            if (verdict.label == FraudVerdict.Label.FRAUD) {
-                showFraudNotification(context, sender, verdict)
+                try {
+                    val id = app.repository.saveMessageCheck(
+                        MessageCheckEntity(
+                            sender = sender,
+                            sanitizedText = verdict.sanitizedPreview,
+                            label = verdict.label.name,
+                            confidence = verdict.confidence,
+                            reasons = verdict.reasons.joinToString(" \u2022 "),
+                            userDecision = null,
+                            timestamp = System.currentTimeMillis()
+                        )
+                    )
+                    SmsNotifier.notify(context, id, sender, verdict)
+                } finally {
+                    pending.finish()
+                }
             }
         }
-    }
-
-    private fun showFraudNotification(context: Context, sender: String, verdict: FraudVerdict) {
-        val intent = Intent(context, MainActivity::class.java).apply {
-            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
-            putExtra("OPEN_FRAUD_TAB", true)
-        }
-
-        val pendingIntent = PendingIntent.getActivity(
-            context, 0, intent,
-            PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
-        )
-
-        val notification = NotificationCompat.Builder(context, MadadgarApplication.CHANNEL_FRAUD_ALERTS)
-            .setContentTitle("⚠️ فراڈ کا خطرہ! (Scam Alert)")
-            .setContentText("یہ میسج مشکوک ہے: ${verdict.reasons.firstOrNull() ?: "فراڈ کا شبہ"}")
-            .setStyle(NotificationCompat.BigTextStyle().bigText("فرام: $sender\nیہ میسج دھوکہ دہی پر مبنی ہے۔ کوئی بھی لنک نہ کھولیں اور PIN یا OTP مت دیں۔"))
-            .setSmallIcon(android.R.drawable.ic_dialog_alert)
-            .setPriority(NotificationCompat.PRIORITY_MAX)
-            .setContentIntent(pendingIntent)
-            .setAutoCancel(true)
-            .build()
-
-        val manager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-        manager.notify(System.currentTimeMillis().toInt(), notification)
     }
 }

@@ -64,5 +64,10 @@
             </intent-filter>
         </receiver>
 
-    </application>
+        <!-- Keep / Delete buttons on verdict notifications -->
+    <receiver
+        android:name=".sms.NotificationActionReceiver"
+        android:exported="false" />
+
+</application>
 </manifest>

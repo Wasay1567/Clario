@@ -35,13 +35,25 @@ import com.madadgar.app.ui.theme.MadadgarTheme
 
 class MainActivity : ComponentActivity() {
 
+    private val notifPermission =
+        registerForActivityResult(androidx.activity.result.contract.ActivityResultContracts.RequestPermission()) { }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
 
+        // Android 13+: ask once for permission to show notifications
+        if (Build.VERSION.SDK_INT >= 33 &&
+            checkSelfPermission(android.Manifest.permission.POST_NOTIFICATIONS) !=
+            android.content.pm.PackageManager.PERMISSION_GRANTED
+        ) {
+            notifPermission.launch(android.Manifest.permission.POST_NOTIFICATIONS)
+        }
+
         setContent {
             MadadgarTheme {
                 MainScreen(
+                    initialTab = if (intent.getBooleanExtra("OPEN_FRAUD_TAB", false)) 1 else 0,
                     onStartBubble = { startBubbleService() },
                     onCheckOverlayPermission = { hasOverlayPermission() },
                     onRequestOverlayPermission = { requestOverlayPermission() }
@@ -79,10 +91,11 @@ class MainActivity : ComponentActivity() {
 fun MainScreen(
     onStartBubble: () -> Unit,
     onCheckOverlayPermission: () -> Boolean,
-    onRequestOverlayPermission: () -> Unit
+    onRequestOverlayPermission: () -> Unit,
+    initialTab: Int = 0
 ) {
     val context = LocalContext.current
-    var selectedTab by remember { mutableIntStateOf(0) }
+    var selectedTab by remember { mutableIntStateOf(initialTab) }
     var isUrdu by remember { mutableStateOf(true) }
     var hasPermission by remember { mutableStateOf(onCheckOverlayPermission()) }
     var isBubbleRunning by remember { mutableStateOf(false) }
